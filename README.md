@@ -60,3 +60,4 @@ downloads/<chapter-title>/002.jpg
 | 0 images found | Try the URL with `?reading_style=long_strip` appended |
 | Images are 403 | The site may have added Cloudflare – open an issue |
 | Wrong images included | Adjust `_looks_like_manga_image()` in downloader.py |
+# Programmering_2_vibe_code
