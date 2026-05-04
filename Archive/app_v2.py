@@ -224,23 +224,17 @@ HTML = r"""<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:           #0d0d0f;
-    --surface:      rgba(20,20,24,0.82);
-    --border:       #252530;
-    --accent:       #e8ff57;
-    --accent2:      #57c8ff;
-    --text:         #e8e8f0;
-    --muted:        #6b6b80;
-    --danger:       #ff5757;
-    --success:      #57ffb0;
-    --radius:       10px;
-    --title-color:  #e8ff57;
-    --btn-text:     #0d0d0f;
-    --fetch-bg:     #e8ff57;
-    --menu-tint:    20,20,24;
-    --menu-alpha:   0.82;
-    --overlay:      0.55;
-    --grid-opacity: 0.35;
+    --bg:        #0d0d0f;
+    --surface:   #141418;
+    --border:    #252530;
+    --accent:    #e8ff57;
+    --accent2:   #57c8ff;
+    --text:      #e8e8f0;
+    --muted:     #6b6b80;
+    --danger:    #ff5757;
+    --success:   #57ffb0;
+    --radius:    10px;
+    --title-color: #e8ff57;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -256,6 +250,7 @@ HTML = r"""<!DOCTYPE html>
     padding: 40px 24px 80px;
   }
 
+  /* Grid overlay – hidden when bg image is set */
   body::before {
     content: '';
     position: fixed; inset: 0;
@@ -263,24 +258,29 @@ HTML = r"""<!DOCTYPE html>
       linear-gradient(var(--border) 1px, transparent 1px),
       linear-gradient(90deg, var(--border) 1px, transparent 1px);
     background-size: 48px 48px;
-    opacity: var(--grid-opacity);
+    opacity: var(--grid-opacity, 0.35);
     pointer-events: none;
     z-index: 0;
     transition: opacity 0.4s;
   }
 
+  /* Dark overlay on top of background image for readability */
   body::after {
     content: '';
     position: fixed; inset: 0;
-    background: rgba(0,0,0,var(--overlay));
+    background: rgba(0,0,0, var(--bg-overlay, 0));
     pointer-events: none;
     z-index: 0;
-    transition: background 0.3s;
+    transition: background 0.4s;
   }
 
-  .wrap { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+  }
 
-  /* ── Header ── */
+  /* ── Header ──────────────────────────────────────────────────────────── */
   header {
     display: flex;
     align-items: baseline;
@@ -297,11 +297,6 @@ HTML = r"""<!DOCTYPE html>
     color: var(--title-color);
     text-transform: uppercase;
     transition: color 0.3s;
-    cursor: text;
-    outline: none;
-  }
-  header h1:focus {
-    border-bottom: 2px solid var(--title-color);
   }
   header span.subtitle {
     font-family: 'DM Mono', monospace;
@@ -310,7 +305,7 @@ HTML = r"""<!DOCTYPE html>
     letter-spacing: 0.05em;
   }
 
-  /* ── Customize button ── */
+  /* ── Customize button ────────────────────────────────────────────────── */
   .btn-customize {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -326,21 +321,20 @@ HTML = r"""<!DOCTYPE html>
   }
   .btn-customize:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* ── Customize panel ── */
+  /* ── Customize panel ─────────────────────────────────────────────────── */
   .customize-panel {
     display: none;
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 24px;
     margin-bottom: 32px;
     gap: 28px;
     flex-wrap: wrap;
-    backdrop-filter: blur(8px);
   }
   .customize-panel.open { display: flex; }
 
-  .customize-section { display: flex; flex-direction: column; gap: 10px; min-width: 160px; }
+  .customize-section { display: flex; flex-direction: column; gap: 10px; min-width: 180px; }
   .customize-label {
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
@@ -356,19 +350,6 @@ HTML = r"""<!DOCTYPE html>
     background: none;
     padding: 2px;
   }
-  .customize-section input[type="range"] {
-    width: 140px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-  .slider-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    min-width: 28px;
-  }
-  .slider-row { display: flex; align-items: center; gap: 10px; }
-
   .btn-bg-upload {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -400,15 +381,19 @@ HTML = r"""<!DOCTYPE html>
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
     color: var(--muted);
-    margin-top: 2px;
+    margin-top: 4px;
     word-break: break-all;
   }
 
-  /* ── Search bar ── */
-  .search-bar { display: flex; gap: 10px; margin-bottom: 40px; }
+  /* ── Search bar ──────────────────────────────────────────────────────── */
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
   .search-bar input {
     flex: 1;
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
@@ -417,15 +402,14 @@ HTML = r"""<!DOCTYPE html>
     padding: 14px 18px;
     outline: none;
     transition: border-color 0.2s;
-    backdrop-filter: blur(8px);
   }
   .search-bar input::placeholder { color: var(--muted); }
   .search-bar input:focus { border-color: var(--accent); }
   .search-bar button {
-    background: var(--fetch-bg);
+    background: var(--accent);
     border: none;
     border-radius: var(--radius);
-    color: var(--btn-text);
+    color: #0d0d0f;
     font-family: 'Syne', sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
@@ -438,9 +422,9 @@ HTML = r"""<!DOCTYPE html>
   .search-bar button:active { transform: scale(0.97); }
   .search-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── Banner ── */
+  /* ── Banner ──────────────────────────────────────────────────────────── */
   .banner {
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 14px 18px;
@@ -449,25 +433,24 @@ HTML = r"""<!DOCTYPE html>
     color: var(--muted);
     margin-bottom: 32px;
     display: none;
-    backdrop-filter: blur(8px);
   }
   .banner.error { border-color: var(--danger); color: var(--danger); }
   .banner.visible { display: block; }
 
-  /* ── Manga card ── */
+  /* ── Manga card ──────────────────────────────────────────────────────── */
   .manga-card {
     display: none;
     gap: 28px;
     margin-bottom: 36px;
     padding: 24px;
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    backdrop-filter: blur(8px);
   }
   .manga-card.visible { display: flex; }
   .manga-card img {
-    width: 120px; height: 170px;
+    width: 120px;
+    height: 170px;
     object-fit: cover;
     border-radius: 8px;
     flex-shrink: 0;
@@ -488,120 +471,172 @@ HTML = r"""<!DOCTYPE html>
     color: var(--muted);
   }
   .manga-card .actions {
-    display: flex; gap: 10px; flex-wrap: wrap;
-    margin-top: 8px; align-items: center;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    align-items: center;
   }
 
-  /* ── Range input ── */
-  .range-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  /* ── Range input ─────────────────────────────────────────────────────── */
+  .range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
   .range-label {
     font-family: 'DM Mono', monospace;
-    font-size: 0.75rem; color: var(--muted); white-space: nowrap;
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
   }
   .range-input {
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 7px;
     color: var(--text);
     font-family: 'DM Mono', monospace;
     font-size: 0.82rem;
     padding: 6px 12px;
-    width: 140px; outline: none;
+    width: 140px;
+    outline: none;
     transition: border-color 0.2s;
   }
   .range-input::placeholder { color: var(--muted); }
   .range-input:focus { border-color: var(--accent); }
   .range-hint {
     font-family: 'DM Mono', monospace;
-    font-size: 0.7rem; color: var(--muted); margin-top: 2px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 2px;
   }
 
-  /* ── Action buttons ── */
   .btn-all {
-    background: var(--fetch-bg);
-    border: none; border-radius: 8px;
-    color: var(--btn-text);
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #0d0d0f;
     font-family: 'Syne', sans-serif;
-    font-size: 0.82rem; font-weight: 700;
-    padding: 9px 20px; cursor: pointer;
-    transition: opacity 0.15s; white-space: nowrap;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 9px 20px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
   }
   .btn-all:hover { opacity: 0.85; }
   .btn-all:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .btn-range {
     background: transparent;
-    border: 1px solid var(--accent2); border-radius: 8px;
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
     color: var(--accent2);
     font-family: 'Syne', sans-serif;
-    font-size: 0.82rem; font-weight: 700;
-    padding: 8px 18px; cursor: pointer;
-    transition: background 0.15s, opacity 0.15s; white-space: nowrap;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    white-space: nowrap;
   }
   .btn-range:hover { background: rgba(87,200,255,0.08); }
   .btn-range:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── Chapter header ── */
+  /* ── Chapters header ─────────────────────────────────────────────────── */
   .chapters-header {
-    display: none; align-items: center;
-    justify-content: space-between; margin-bottom: 14px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
   }
   .chapters-header.visible { display: flex; }
   .chapters-header h2 {
-    font-size: 1rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
   }
   .chapters-header .count {
-    font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--muted);
-    background: rgba(var(--menu-tint), var(--menu-alpha));
-    border: 1px solid var(--border); border-radius: 20px; padding: 3px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 12px;
   }
 
-  /* ── Chapter rows ── */
+  /* ── Chapter rows ────────────────────────────────────────────────────── */
   .chapter-list { display: flex; flex-direction: column; gap: 6px; }
+
   .chapter-row {
-    display: flex; align-items: center; gap: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
     padding: 12px 16px;
-    background: rgba(var(--menu-tint), var(--menu-alpha));
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     transition: border-color 0.15s;
-    backdrop-filter: blur(8px);
   }
   .chapter-row:hover { border-color: #383845; }
   .chapter-row.done  { border-color: #1a3328; }
   .chapter-row.error-row { border-color: #3d1a1a; }
 
   .chapter-num {
-    font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted);
-    width: 32px; flex-shrink: 0; text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    width: 32px;
+    flex-shrink: 0;
+    text-align: right;
   }
   .chapter-title { flex: 1; font-size: 0.92rem; font-weight: 600; }
+
   .chapter-status {
-    font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted);
-    min-width: 120px; text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    min-width: 120px;
+    text-align: right;
   }
   .chapter-status.downloading { color: var(--accent2); }
   .chapter-status.done  { color: var(--success); }
   .chapter-status.error { color: var(--danger); }
 
   .chapter-progress {
-    width: 80px; height: 4px; background: var(--border);
-    border-radius: 2px; overflow: hidden; flex-shrink: 0; display: none;
+    width: 80px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: none;
   }
   .chapter-progress.visible { display: block; }
   .chapter-progress-fill {
-    height: 100%; background: var(--accent2); border-radius: 2px;
-    transition: width 0.3s ease; width: 0%;
+    height: 100%;
+    background: var(--accent2);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
   }
   .chapter-row.done .chapter-progress-fill { background: var(--success); }
 
   .btn-dl {
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 7px; color: var(--text);
-    font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 600;
-    padding: 6px 14px; cursor: pointer;
-    transition: border-color 0.15s, background 0.15s; white-space: nowrap;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    white-space: nowrap;
   }
   .btn-dl:hover { border-color: var(--accent); color: var(--accent); }
   .btn-dl:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -610,10 +645,14 @@ HTML = r"""<!DOCTYPE html>
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
     width: 16px; height: 16px;
-    border: 2px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-    display: inline-block; vertical-align: middle;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
   }
+
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -626,73 +665,31 @@ HTML = r"""<!DOCTYPE html>
 
   <header>
     <div class="header-left">
-      <h1 id="appTitle" contenteditable="true"
-          spellcheck="false"
-          onblur="saveTitle(this)"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">Manga DL</h1>
+      <h1>Manga DL</h1>
       <span class="subtitle">atsu.moe downloader</span>
     </div>
     <button class="btn-customize" onclick="toggleCustomize()">⚙ Customize</button>
   </header>
 
-  <!-- ── Customize panel ── -->
+  <!-- Customize panel -->
   <div class="customize-panel" id="customizePanel">
 
-    <!-- Title colour -->
+    <!-- Title / text colour -->
     <div class="customize-section">
       <span class="customize-label">Title colour</span>
       <input type="color" id="titleColorPicker" value="#e8ff57"
              oninput="applyTitleColor(this.value)">
-      <span class="range-hint">Header &amp; manga title text</span>
+      <span class="range-hint">Changes heading &amp; manga title colour</span>
     </div>
 
-    <!-- General text / body colour -->
+    <!-- Background image -->
     <div class="customize-section">
-      <span class="customize-label">Text colour</span>
-      <input type="color" id="textColorPicker" value="#e8e8f0"
-             oninput="applyTextColor(this.value)">
-      <span class="range-hint">Chapter names &amp; body text</span>
-    </div>
-
-    <!-- Fetch / Download All button colour -->
-    <div class="customize-section">
-      <span class="customize-label">Button colour</span>
-      <input type="color" id="fetchColorPicker" value="#e8ff57"
-             oninput="applyFetchColor(this.value)">
-      <span class="range-hint">Fetch &amp; Download All buttons</span>
-    </div>
-
-    <!-- Button text colour -->
-    <div class="customize-section">
-      <span class="customize-label">Button text</span>
-      <input type="color" id="btnTextPicker" value="#0d0d0f"
-             oninput="applyBtnText(this.value)">
-      <span class="range-hint">Text on coloured buttons</span>
-    </div>
-
-    <!-- Menu / card tint (colour only, transparency kept) -->
-    <div class="customize-section">
-      <span class="customize-label">Menu tint</span>
-      <input type="color" id="menuTintPicker" value="#141418"
-             oninput="applyMenuTint(this.value)">
-      <span class="range-hint">Card &amp; row background tint</span>
-    </div>
-
-    <!-- Background image + overlay slider -->
-    <div class="customize-section" style="min-width:200px">
       <span class="customize-label">Background image</span>
       <label class="btn-bg-upload" for="bgFileInput">📁 Choose image</label>
       <input type="file" id="bgFileInput" accept="image/*"
              style="display:none" onchange="applyBgImage(this)">
       <div class="bg-filename" id="bgFilename">No image selected</div>
       <button class="btn-bg-clear" onclick="clearBgImage()">✕ Remove image</button>
-      <span class="customize-label" style="margin-top:8px">Dark overlay</span>
-      <div class="slider-row">
-        <input type="range" id="overlaySlider" min="0" max="0.9" step="0.05" value="0.55"
-               oninput="applyOverlay(this.value)">
-        <span class="slider-val" id="overlayVal">55%</span>
-      </div>
-      <span class="range-hint">0% = no overlay · 90% = very dark</span>
     </div>
 
   </div>
@@ -739,6 +736,7 @@ HTML = r"""<!DOCTYPE html>
     <h2>Chapters</h2>
     <span class="count" id="chapterCount"></span>
   </div>
+
   <div class="chapter-list" id="chapterList"></div>
 
 </div>
@@ -748,53 +746,16 @@ let _chapters = [];
 let _mangaTitle = '';
 let _activeDownloads = 0;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `${r},${g},${b}`;
-}
-
-const root = document.documentElement;
-
 // ── Customization ────────────────────────────────────────────────────────────
 
 function toggleCustomize() {
-  document.getElementById('customizePanel').classList.toggle('open');
+  const panel = document.getElementById('customizePanel');
+  panel.classList.toggle('open');
 }
 
-function applyTitleColor(v) {
-  root.style.setProperty('--title-color', v);
-  localStorage.setItem('titleColor', v);
-}
-
-function applyTextColor(v) {
-  root.style.setProperty('--text', v);
-  localStorage.setItem('textColor', v);
-}
-
-function applyFetchColor(v) {
-  root.style.setProperty('--fetch-bg', v);
-  localStorage.setItem('fetchColor', v);
-}
-
-function applyBtnText(v) {
-  root.style.setProperty('--btn-text', v);
-  localStorage.setItem('btnText', v);
-}
-
-function applyMenuTint(v) {
-  root.style.setProperty('--menu-tint', hexToRgb(v));
-  localStorage.setItem('menuTint', v);
-}
-
-function applyOverlay(v) {
-  root.style.setProperty('--overlay', v);
-  const pct = Math.round(v * 100);
-  document.getElementById('overlayVal').textContent = pct + '%';
-  localStorage.setItem('overlay', v);
+function applyTitleColor(color) {
+  document.documentElement.style.setProperty('--title-color', color);
+  localStorage.setItem('titleColor', color);
 }
 
 function applyBgImage(input) {
@@ -804,8 +765,10 @@ function applyBgImage(input) {
   reader.onload = (e) => {
     const dataUrl = e.target.result;
     document.body.style.backgroundImage = `url(${dataUrl})`;
-    root.style.setProperty('--grid-opacity', '0');
+    document.documentElement.style.setProperty('--grid-opacity', '0');
+    document.documentElement.style.setProperty('--bg-overlay', '0.55');
     document.getElementById('bgFilename').textContent = file.name;
+    // Store in localStorage so it persists across reloads
     try { localStorage.setItem('bgImage', dataUrl); } catch(e) {}
     localStorage.setItem('bgFilename', file.name);
   };
@@ -814,52 +777,29 @@ function applyBgImage(input) {
 
 function clearBgImage() {
   document.body.style.backgroundImage = '';
-  root.style.setProperty('--grid-opacity', '0.35');
+  document.documentElement.style.setProperty('--grid-opacity', '0.35');
+  document.documentElement.style.setProperty('--bg-overlay', '0');
   document.getElementById('bgFilename').textContent = 'No image selected';
   document.getElementById('bgFileInput').value = '';
   localStorage.removeItem('bgImage');
   localStorage.removeItem('bgFilename');
 }
 
-function saveTitle(el) {
-  const val = el.textContent.trim() || 'Manga DL';
-  el.textContent = val;
-  localStorage.setItem('appTitle', val);
-}
-
-// Load all saved preferences on startup
+// Load saved preferences on startup
 (function loadPrefs() {
-  const tc = localStorage.getItem('titleColor');
-  if (tc) { applyTitleColor(tc); document.getElementById('titleColorPicker').value = tc; }
-
-  const tx = localStorage.getItem('textColor');
-  if (tx) { applyTextColor(tx); document.getElementById('textColorPicker').value = tx; }
-
-  const fc = localStorage.getItem('fetchColor');
-  if (fc) { applyFetchColor(fc); document.getElementById('fetchColorPicker').value = fc; }
-
-  const bt = localStorage.getItem('btnText');
-  if (bt) { applyBtnText(bt); document.getElementById('btnTextPicker').value = bt; }
-
-  const mt = localStorage.getItem('menuTint');
-  if (mt) { applyMenuTint(mt); document.getElementById('menuTintPicker').value = mt; }
-
-  const ov = localStorage.getItem('overlay');
-  if (ov) {
-    applyOverlay(ov);
-    document.getElementById('overlaySlider').value = ov;
+  const savedColor = localStorage.getItem('titleColor');
+  if (savedColor) {
+    applyTitleColor(savedColor);
+    document.getElementById('titleColorPicker').value = savedColor;
   }
-
-  const bg = localStorage.getItem('bgImage');
-  if (bg) {
-    document.body.style.backgroundImage = `url(${bg})`;
-    root.style.setProperty('--grid-opacity', '0');
-    document.getElementById('bgFilename').textContent =
-      localStorage.getItem('bgFilename') || 'Custom image';
+  const savedBg = localStorage.getItem('bgImage');
+  if (savedBg) {
+    document.body.style.backgroundImage = `url(${savedBg})`;
+    document.documentElement.style.setProperty('--grid-opacity', '0');
+    document.documentElement.style.setProperty('--bg-overlay', '0.55');
+    const name = localStorage.getItem('bgFilename') || 'Custom image';
+    document.getElementById('bgFilename').textContent = name;
   }
-
-  const title = localStorage.getItem('appTitle');
-  if (title) document.getElementById('appTitle').textContent = title;
 })();
 
 
@@ -868,24 +808,32 @@ function saveTitle(el) {
 function parseRange(str, total) {
   str = str.trim().toLowerCase();
   if (!str || str === 'all' || str === '*') {
-    return Array.from({length: total}, (_, i) => i);
+    return Array.from({length: total}, (_, i) => i);  // 0-based indices
   }
+
   const indices = new Set();
   for (const part of str.split(',')) {
     const p = part.trim();
     if (!p) continue;
+
+    // Range like "5-10" or "5-" (open-ended)
     const rangeMatch = p.match(/^(\d+)\s*-\s*(\d*)$/);
     if (rangeMatch) {
       const start = parseInt(rangeMatch[1]);
       const end   = rangeMatch[2] ? parseInt(rangeMatch[2]) : total;
-      for (let i = start; i <= Math.min(end, total); i++) indices.add(i - 1);
+      for (let i = start; i <= Math.min(end, total); i++) {
+        indices.add(i - 1);  // convert to 0-based
+      }
       continue;
     }
+
+    // Single number
     if (/^\d+$/.test(p)) {
       const n = parseInt(p);
       if (n >= 1 && n <= total) indices.add(n - 1);
     }
   }
+
   return [...indices].sort((a, b) => a - b);
 }
 
@@ -895,9 +843,11 @@ function parseRange(str, total) {
 async function fetchManga() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) return;
+
   setFetching(true);
   showBanner('Fetching chapters… this takes 10–20 seconds.', false);
   clearResults();
+
   try {
     const res = await fetch('/api/fetch', {
       method: 'POST',
@@ -905,12 +855,18 @@ async function fetchManga() {
       body: JSON.stringify({ url })
     });
     const data = await res.json();
-    if (!res.ok || data.error) { showBanner(data.error || 'Something went wrong.', true); return; }
+
+    if (!res.ok || data.error) {
+      showBanner(data.error || 'Something went wrong.', true);
+      return;
+    }
+
     hideBanner();
     _chapters = data.chapters;
     _mangaTitle = data.title;
     renderMangaCard(data);
     renderChapters(data.chapters);
+
   } catch (e) {
     showBanner('Network error: ' + e.message, true);
   } finally {
@@ -923,11 +879,13 @@ document.getElementById('urlInput').addEventListener('keydown', e => {
 });
 
 
-// ── Render ───────────────────────────────────────────────────────────────────
+// ── Render manga card ────────────────────────────────────────────────────────
 
 function renderMangaCard(data) {
   document.getElementById('mangaTitle').textContent = data.title;
-  document.getElementById('mangaMeta').textContent = data.chapters.length + ' chapters available';
+  document.getElementById('mangaMeta').textContent =
+    data.chapters.length + ' chapters available';
+
   const img = document.getElementById('coverImg');
   if (data.cover) {
     img.src = '/api/proxy-cover?url=' + encodeURIComponent(data.cover);
@@ -935,44 +893,53 @@ function renderMangaCard(data) {
   } else {
     img.style.display = 'none';
   }
+
   document.getElementById('mangaCard').classList.add('visible', 'fade-up');
   document.getElementById('chaptersHeader').classList.add('visible');
   document.getElementById('chapterCount').textContent = data.chapters.length;
 }
 
+
+// ── Render chapter rows ──────────────────────────────────────────────────────
+
 function renderChapters(chapters) {
   const list = document.getElementById('chapterList');
   list.innerHTML = '';
+
   chapters.forEach((ch, i) => {
+    const idx = i + 1;
     const row = document.createElement('div');
     row.className = 'chapter-row fade-up';
     row.id = 'row-' + i;
     row.style.animationDelay = Math.min(i * 18, 400) + 'ms';
+
     row.innerHTML = `
-      <span class="chapter-num">${String(i+1).padStart(3,'0')}</span>
+      <span class="chapter-num">${String(idx).padStart(3, '0')}</span>
       <span class="chapter-title">${escHtml(ch.title)}</span>
       <div class="chapter-progress" id="prog-${i}">
         <div class="chapter-progress-fill" id="progfill-${i}"></div>
       </div>
       <span class="chapter-status" id="status-${i}"></span>
-      <button class="btn-dl" id="btn-${i}" onclick="downloadChapter(${i})">↓ Download</button>
+      <button class="btn-dl" id="btn-${i}"
+              onclick="downloadChapter(${i})">↓ Download</button>
     `;
     list.appendChild(row);
   });
 }
 
 
-// ── Download chapter ─────────────────────────────────────────────────────────
+// ── Download a single chapter ────────────────────────────────────────────────
 
 async function downloadChapter(i) {
-  const ch       = _chapters[i];
+  const ch = _chapters[i];
   const btn      = document.getElementById('btn-' + i);
   const statusEl = document.getElementById('status-' + i);
   const progEl   = document.getElementById('prog-' + i);
   const progFill = document.getElementById('progfill-' + i);
   const row      = document.getElementById('row-' + i);
 
-  btn.disabled = true; btn.textContent = '…';
+  btn.disabled = true;
+  btn.textContent = '…';
   statusEl.textContent = 'Starting…';
   statusEl.className = 'chapter-status downloading';
   progEl.classList.add('visible');
@@ -984,8 +951,10 @@ async function downloadChapter(i) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chapter_url: ch.url, chapter_title: ch.title,
-        manga_title: _mangaTitle, chapter_index: i + 1
+        chapter_url:   ch.url,
+        chapter_title: ch.title,
+        manga_title:   _mangaTitle,
+        chapter_index: i + 1
       })
     });
     const { job_id, error } = await res.json();
@@ -994,75 +963,117 @@ async function downloadChapter(i) {
     const evtSrc = new EventSource('/api/progress/' + job_id);
     evtSrc.onmessage = (e) => {
       const job = JSON.parse(e.data);
+
       if (job.total > 0) {
-        progFill.style.width = Math.round((job.progress/job.total)*100) + '%';
+        const pct = Math.round((job.progress / job.total) * 100);
+        progFill.style.width = pct + '%';
         statusEl.textContent = job.progress + '/' + job.total;
       } else {
         statusEl.textContent = job.message || job.status;
       }
+
       if (job.done) {
-        evtSrc.close(); _activeDownloads--; updateBulkBtns();
+        evtSrc.close();
+        _activeDownloads--;
+        updateBulkBtns();
+
         if (job.status === 'done') {
           row.classList.add('done');
-          statusEl.textContent = '✓ Done'; statusEl.className = 'chapter-status done';
+          statusEl.textContent = '✓ Done';
+          statusEl.className = 'chapter-status done';
           progFill.style.width = '100%';
-          btn.textContent = '✓'; btn.className = 'btn-dl done-btn'; btn.disabled = true;
+          btn.textContent = '✓';
+          btn.className = 'btn-dl done-btn';
+          btn.disabled = true;
         } else {
           statusEl.textContent = '✕ ' + (job.error || 'Failed');
-          statusEl.className = 'chapter-status error'; row.classList.add('error-row');
-          btn.textContent = '↓ Retry'; btn.disabled = false;
+          statusEl.className = 'chapter-status error';
+          row.classList.add('error-row');
+          btn.textContent = '↓ Retry';
+          btn.disabled = false;
         }
       }
     };
+
     evtSrc.onerror = () => {
       evtSrc.close();
-      statusEl.textContent = 'Connection lost'; statusEl.className = 'chapter-status error';
-      btn.textContent = '↓ Retry'; btn.disabled = false;
-      _activeDownloads--; updateBulkBtns();
+      statusEl.textContent = 'Connection lost';
+      statusEl.className = 'chapter-status error';
+      btn.textContent = '↓ Retry';
+      btn.disabled = false;
+      _activeDownloads--;
+      updateBulkBtns();
     };
+
   } catch (err) {
-    statusEl.textContent = '✕ ' + err.message; statusEl.className = 'chapter-status error';
-    btn.textContent = '↓ Retry'; btn.disabled = false;
-    _activeDownloads--; updateBulkBtns();
+    statusEl.textContent = '✕ ' + err.message;
+    statusEl.className = 'chapter-status error';
+    btn.textContent = '↓ Retry';
+    btn.disabled = false;
+    _activeDownloads--;
+    updateBulkBtns();
   }
 }
 
 
-// ── Bulk download ────────────────────────────────────────────────────────────
+// ── Download all chapters ────────────────────────────────────────────────────
 
 async function downloadAll() {
   await runBulkDownload(Array.from({length: _chapters.length}, (_, i) => i));
 }
 
+
+// ── Download range ───────────────────────────────────────────────────────────
+
 async function downloadRange() {
   const raw = document.getElementById('rangeInput').value.trim();
-  if (!raw) { showBanner('Enter a range first — e.g. 30-54 or 1,3,5', true); setTimeout(hideBanner, 3000); return; }
+  if (!raw) {
+    showBanner('Enter a range first — e.g. 30-54 or 1,3,5', true);
+    setTimeout(hideBanner, 3000);
+    return;
+  }
+
   const indices = parseRange(raw, _chapters.length);
-  if (!indices.length) { showBanner('No valid chapters in that range.', true); setTimeout(hideBanner, 3000); return; }
+  if (indices.length === 0) {
+    showBanner('No valid chapters in that range.', true);
+    setTimeout(hideBanner, 3000);
+    return;
+  }
+
   showBanner(`Downloading ${indices.length} chapter(s) from range "${raw}"…`, false);
   await runBulkDownload(indices);
   hideBanner();
 }
 
+
+// ── Shared bulk download loop ────────────────────────────────────────────────
+
 async function runBulkDownload(indices) {
-  document.getElementById('downloadAllBtn').disabled   = true;
-  document.getElementById('downloadRangeBtn').disabled = true;
+  const allBtn   = document.getElementById('downloadAllBtn');
+  const rangeBtn = document.getElementById('downloadRangeBtn');
+  allBtn.disabled   = true;
+  rangeBtn.disabled = true;
+
   for (const i of indices) {
     const rowBtn = document.getElementById('btn-' + i);
     if (rowBtn && rowBtn.classList.contains('done-btn')) continue;
     await downloadChapter(i);
     await waitForDownloadDone(i);
   }
-  document.getElementById('downloadAllBtn').disabled   = false;
-  document.getElementById('downloadRangeBtn').disabled = false;
+
+  allBtn.disabled   = false;
+  rangeBtn.disabled = false;
 }
 
 function waitForDownloadDone(i) {
   return new Promise(resolve => {
     const check = () => {
       const row = document.getElementById('row-' + i);
-      if (row && (row.classList.contains('done') || row.classList.contains('error-row'))) resolve();
-      else setTimeout(check, 500);
+      if (row && (row.classList.contains('done') || row.classList.contains('error-row'))) {
+        resolve();
+      } else {
+        setTimeout(check, 500);
+      }
     };
     setTimeout(check, 500);
   });
@@ -1072,22 +1083,29 @@ function waitForDownloadDone(i) {
 // ── UI helpers ────────────────────────────────────────────────────────────────
 
 function updateBulkBtns() {
-  const d = _activeDownloads > 0;
-  document.getElementById('downloadAllBtn').disabled   = d;
-  document.getElementById('downloadRangeBtn').disabled = d;
+  const disabled = _activeDownloads > 0;
+  document.getElementById('downloadAllBtn').disabled   = disabled;
+  document.getElementById('downloadRangeBtn').disabled = disabled;
 }
+
 function setFetching(active) {
-  const btn = document.getElementById('fetchBtn');
-  const inp = document.getElementById('urlInput');
-  btn.disabled = inp.disabled = active;
-  btn.innerHTML = active ? '<span class="spinner"></span>' : 'Fetch';
+  const btn   = document.getElementById('fetchBtn');
+  const input = document.getElementById('urlInput');
+  btn.disabled   = active;
+  input.disabled = active;
+  btn.innerHTML  = active ? '<span class="spinner"></span>' : 'Fetch';
 }
+
 function showBanner(msg, isError) {
   const b = document.getElementById('banner');
   b.textContent = msg;
   b.className = 'banner visible' + (isError ? ' error' : '');
 }
-function hideBanner() { document.getElementById('banner').className = 'banner'; }
+
+function hideBanner() {
+  document.getElementById('banner').className = 'banner';
+}
+
 function clearResults() {
   _chapters = [];
   document.getElementById('mangaCard').className = 'manga-card';
@@ -1097,8 +1115,13 @@ function clearResults() {
   document.getElementById('coverImg').src = '';
   document.getElementById('rangeInput').value = '';
 }
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function escHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 </script>
 </body>
