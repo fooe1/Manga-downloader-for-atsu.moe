@@ -709,116 +709,6 @@ HTML = r"""<!DOCTYPE html>
   .btn-dl:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-dl.done-btn { border-color: var(--success); color: var(--success); opacity: 0.6; }
 
-  /* ── Sound notification section inside customize panel ── */
-  .sound-section {
-    width: 100%;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-    margin-top: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .sound-section-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .sound-controls {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  .sound-field { display: flex; flex-direction: column; gap: 8px; }
-  .sound-field label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .sound-field input[type="text"],
-  .sound-field input[type="number"] {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    padding: 6px 10px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 90px;
-  }
-  .sound-field input[type="text"] { width: 160px; }
-  .sound-field input:focus { border-color: var(--accent); }
-  .sound-toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .sound-toggle {
-    position: relative;
-    width: 36px; height: 20px;
-    flex-shrink: 0;
-  }
-  .sound-toggle input { opacity: 0; width: 0; height: 0; }
-  .sound-toggle-slider {
-    position: absolute; inset: 0;
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 1.5));
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-  }
-  .sound-toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 14px; height: 14px;
-    left: 3px; top: 3px;
-    background: var(--muted);
-    border-radius: 50%;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .sound-toggle input:checked + .sound-toggle-slider { background: var(--fetch-bg); border-color: var(--fetch-bg); }
-  .sound-toggle input:checked + .sound-toggle-slider::before {
-    transform: translateX(16px);
-    background: var(--btn-text);
-  }
-  .sound-toggle-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--text);
-  }
-  .btn-sound-test {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 6px 14px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    align-self: flex-end;
-  }
-  .btn-sound-test:hover { border-color: var(--accent2); color: var(--accent2); }
-  .sound-file-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .sound-filename {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-
   /* ── Speed panel ── */
   .btn-speed {
     background: var(--surface);
@@ -1078,66 +968,6 @@ HTML = r"""<!DOCTYPE html>
         <span class="slider-val" id="menuAlphaVal">82%</span>
       </div>
       <span class="range-hint">0% = fully transparent · 100% = solid</span>
-    </div>
-
-    <!-- Sound notification -->
-    <div class="sound-section">
-      <span class="sound-section-title">🔔 Completion sound</span>
-
-      <div class="sound-toggle-row">
-        <label class="sound-toggle">
-          <input type="checkbox" id="soundEnabled" onchange="saveSoundPrefs()">
-          <span class="sound-toggle-slider"></span>
-        </label>
-        <span class="sound-toggle-label">Play sound when download finishes</span>
-      </div>
-
-      <div class="sound-controls">
-
-        <!-- Custom sound file -->
-        <div class="sound-field">
-          <label>Sound file</label>
-          <div class="sound-file-row">
-            <label class="btn-bg-upload" for="soundFileInput" style="font-size:0.75rem;padding:6px 12px">
-              📂 Choose file
-            </label>
-            <input type="file" id="soundFileInput" accept="audio/*"
-                   style="display:none" onchange="loadSoundFile(this)">
-            <span class="sound-filename" id="soundFilename">Default beep</span>
-          </div>
-          <span class="range-hint">mp3, wav, ogg, flac, m4a …</span>
-        </div>
-
-        <!-- Start time -->
-        <div class="sound-field">
-          <label>Start time (mm:ss)</label>
-          <input type="text" id="soundStart" placeholder="0:00"
-                 value="0:00" oninput="saveSoundPrefs()">
-          <span class="range-hint">e.g. 1:44</span>
-        </div>
-
-        <!-- Duration -->
-        <div class="sound-field">
-          <label>Duration (seconds)</label>
-          <input type="number" id="soundDuration" min="1" max="60"
-                 value="3" oninput="saveSoundPrefs()">
-          <span class="range-hint">1 – 60 s</span>
-        </div>
-
-        <!-- Volume -->
-        <div class="sound-field" style="min-width:160px">
-          <label>Volume</label>
-          <div class="slider-row">
-            <input type="range" id="soundVolume" min="0" max="1" step="0.05"
-                   value="0.7" oninput="updateVolumeLabel(this.value); saveSoundPrefs()">
-            <span class="slider-val" id="soundVolumeVal">70%</span>
-          </div>
-        </div>
-
-        <!-- Test button -->
-        <button class="btn-sound-test" onclick="testSound()">▶ Test sound</button>
-
-      </div>
     </div>
 
     <!-- Reset all -->
@@ -1789,9 +1619,6 @@ async function runBulkDownload(indices) {
 
   document.getElementById('downloadAllBtn').disabled   = false;
   document.getElementById('downloadRangeBtn').disabled = false;
-
-  // Play the completion sound (if enabled)
-  playCompletionSound();
 }
 
 function waitForDownloadDone(i) {
@@ -1896,157 +1723,6 @@ function resetLibCustomization() {
 })();
 
 
-// ── Sound notification ───────────────────────────────────────────────────────
-
-// Holds the decoded AudioBuffer for the custom sound file
-let _soundBuffer    = null;   // AudioBuffer if user loaded a file
-let _soundDataUrl   = null;   // raw data URL for localStorage persistence
-let _audioCtx       = null;   // shared AudioContext (created on first use)
-
-function getAudioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return _audioCtx;
-}
-
-/** Parse "m:ss" or "ss" into a float number of seconds */
-function parseTimeInput(str) {
-  str = (str || '0:00').trim();
-  const parts = str.split(':');
-  if (parts.length === 2) {
-    return Math.max(0, parseInt(parts[0]) * 60 + parseFloat(parts[1]));
-  }
-  return Math.max(0, parseFloat(str) || 0);
-}
-
-/** Generate a simple two-tone beep as fallback when no file is loaded */
-function playBeep(startOffset, duration, volume) {
-  const ctx = getAudioCtx();
-  const gain = ctx.createGain();
-  gain.gain.value = volume;
-  gain.connect(ctx.destination);
-
-  [[880, 0], [1100, 0.15]].forEach(([freq, delay]) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    const t = ctx.currentTime + delay;
-    osc.start(t);
-    osc.stop(t + duration * 0.5);
-  });
-}
-
-/** Play the sound with the current settings */
-async function playCompletionSound() {
-  if (!document.getElementById('soundEnabled').checked) return;
-
-  const startSec = parseTimeInput(document.getElementById('soundStart').value);
-  const duration = Math.min(60, Math.max(0.5, parseFloat(document.getElementById('soundDuration').value) || 3));
-  const volume   = parseFloat(document.getElementById('soundVolume').value) || 0.7;
-
-  if (!_soundBuffer) {
-    // No file loaded – play the built-in beep
-    playBeep(0, duration, volume);
-    return;
-  }
-
-  try {
-    const ctx   = getAudioCtx();
-    const src   = ctx.createBufferSource();
-    src.buffer  = _soundBuffer;
-
-    const gain  = ctx.createGain();
-    gain.gain.value = volume;
-
-    src.connect(gain);
-    gain.connect(ctx.destination);
-
-    // Clamp startSec to within the audio duration
-    const safeStart = Math.min(startSec, _soundBuffer.duration - 0.1);
-    src.start(ctx.currentTime, Math.max(0, safeStart), duration);
-  } catch (e) {
-    console.warn('Sound playback failed:', e);
-  }
-}
-
-/** Load a user-chosen audio file into an AudioBuffer */
-async function loadSoundFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  document.getElementById('soundFilename').textContent = file.name;
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    _soundDataUrl = e.target.result;
-    try {
-      const ctx = getAudioCtx();
-      const arrayBuffer = await fetch(_soundDataUrl).then(r => r.arrayBuffer());
-      _soundBuffer = await ctx.decodeAudioData(arrayBuffer);
-      // Persist to localStorage (may fail for very large files)
-      try { localStorage.setItem('soundFile', _soundDataUrl); } catch(err) {}
-      localStorage.setItem('soundFilename', file.name);
-      saveSoundPrefs();
-    } catch (err) {
-      console.warn('Could not decode audio file:', err);
-      document.getElementById('soundFilename').textContent = file.name + ' (decode failed)';
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-/** Save non-file sound prefs to localStorage */
-function saveSoundPrefs() {
-  localStorage.setItem('soundEnabled',  document.getElementById('soundEnabled').checked);
-  localStorage.setItem('soundStart',    document.getElementById('soundStart').value);
-  localStorage.setItem('soundDuration', document.getElementById('soundDuration').value);
-  localStorage.setItem('soundVolume',   document.getElementById('soundVolume').value);
-}
-
-function updateVolumeLabel(v) {
-  document.getElementById('soundVolumeVal').textContent = Math.round(v * 100) + '%';
-}
-
-/** Let the user hear the sound without running a full download */
-function testSound() {
-  // Resume AudioContext if suspended (browser autoplay policy)
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume().then(() => playCompletionSound());
-  else playCompletionSound();
-}
-
-/** Load all saved sound prefs on startup */
-(function loadSoundPrefs() {
-  const enabled  = localStorage.getItem('soundEnabled') === 'true';
-  const start    = localStorage.getItem('soundStart')    || '0:00';
-  const dur      = localStorage.getItem('soundDuration') || '3';
-  const vol      = localStorage.getItem('soundVolume')   || '0.7';
-  const filename = localStorage.getItem('soundFilename') || 'Default beep';
-
-  document.getElementById('soundEnabled').checked  = enabled;
-  document.getElementById('soundStart').value      = start;
-  document.getElementById('soundDuration').value   = dur;
-  document.getElementById('soundVolume').value      = vol;
-  document.getElementById('soundFilename').textContent = filename;
-  updateVolumeLabel(vol);
-
-  // Try to reload the saved audio file
-  const savedFile = localStorage.getItem('soundFile');
-  if (savedFile) {
-    _soundDataUrl = savedFile;
-    (async () => {
-      try {
-        const ctx = getAudioCtx();
-        const arrayBuffer = await fetch(savedFile).then(r => r.arrayBuffer());
-        _soundBuffer = await ctx.decodeAudioData(arrayBuffer);
-      } catch (e) {
-        console.warn('Could not restore saved sound file:', e);
-      }
-    })();
-  }
-})();
-
-
 // ── Library ───────────────────────────────────────────────────────────────────
 
 async function openLibrary() {
@@ -2142,20 +1818,11 @@ def index():
 
 
 if __name__ == "__main__":
-    import webbrowser, threading
-
-    def open_browser():
-        # Wait a moment for Flask to start, then open the browser
-        time.sleep(1.5)
-        webbrowser.open("http://localhost:7337")
-
     print()
     print("  ┌─────────────────────────────────────────┐")
     print("  │   Manga Downloader GUI                  │")
-    print("  │   Opening browser...                    │")
+    print("  │   Open: http://localhost:7337            │")
     print("  │   Press Ctrl+C to stop                  │")
     print("  └─────────────────────────────────────────┘")
     print()
-
-    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="127.0.0.1", port=7337, debug=False, threaded=True)

@@ -26,16 +26,6 @@ app = Flask(__name__)
 _jobs: dict[str, dict] = {}
 _jobs_lock = threading.Lock()
 
-# ---------------------------------------------------------------------------
-# Speed settings – shared mutable state, read by the download thread
-# ---------------------------------------------------------------------------
-_speed = {
-    "concurrent_images":   4,   # images downloaded in parallel (default safe value)
-    "concurrent_chapters": 1,   # chapters scraped+downloaded in parallel (default: sequential)
-}
-_speed_lock = threading.Lock()
-
-
 def job_update(job_id: str, **kwargs):
     with _jobs_lock:
         if job_id in _jobs:
@@ -155,11 +145,7 @@ def api_download():
 
             import random
             from concurrent.futures import ThreadPoolExecutor, as_completed
-            from downloader import _download_one
-
-            # Read current speed settings
-            with _speed_lock:
-                workers = _speed["concurrent_images"]
+            from downloader import _download_one, CONCURRENT_DOWNLOADS
 
             pad = len(str(total))
             completed = [0]
@@ -173,7 +159,7 @@ def api_download():
                 return result
 
             success = 0
-            with ThreadPoolExecutor(max_workers=workers) as pool:
+            with ThreadPoolExecutor(max_workers=CONCURRENT_DOWNLOADS) as pool:
                 futures = {
                     pool.submit(tracked_download, idx, url): idx
                     for idx, url in enumerate(image_urls, start=1)
@@ -226,26 +212,6 @@ def proxy_cover():
                         content_type=r.headers.get("content-type", "image/jpeg"))
     except Exception:
         return "", 404
-
-
-# ---------------------------------------------------------------------------
-# Speed settings API
-# ---------------------------------------------------------------------------
-
-@app.route("/api/speed", methods=["GET"])
-def api_speed_get():
-    with _speed_lock:
-        return jsonify(**_speed)
-
-@app.route("/api/speed", methods=["POST"])
-def api_speed_set():
-    data = request.get_json(silent=True) or {}
-    with _speed_lock:
-        if "concurrent_images" in data:
-            _speed["concurrent_images"] = max(1, min(16, int(data["concurrent_images"])))
-        if "concurrent_chapters" in data:
-            _speed["concurrent_chapters"] = max(1, min(5, int(data["concurrent_chapters"])))
-    return jsonify(ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -709,181 +675,6 @@ HTML = r"""<!DOCTYPE html>
   .btn-dl:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-dl.done-btn { border-color: var(--success); color: var(--success); opacity: 0.6; }
 
-  /* ── Sound notification section inside customize panel ── */
-  .sound-section {
-    width: 100%;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-    margin-top: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .sound-section-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .sound-controls {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  .sound-field { display: flex; flex-direction: column; gap: 8px; }
-  .sound-field label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .sound-field input[type="text"],
-  .sound-field input[type="number"] {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    padding: 6px 10px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 90px;
-  }
-  .sound-field input[type="text"] { width: 160px; }
-  .sound-field input:focus { border-color: var(--accent); }
-  .sound-toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .sound-toggle {
-    position: relative;
-    width: 36px; height: 20px;
-    flex-shrink: 0;
-  }
-  .sound-toggle input { opacity: 0; width: 0; height: 0; }
-  .sound-toggle-slider {
-    position: absolute; inset: 0;
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 1.5));
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-  }
-  .sound-toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 14px; height: 14px;
-    left: 3px; top: 3px;
-    background: var(--muted);
-    border-radius: 50%;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .sound-toggle input:checked + .sound-toggle-slider { background: var(--fetch-bg); border-color: var(--fetch-bg); }
-  .sound-toggle input:checked + .sound-toggle-slider::before {
-    transform: translateX(16px);
-    background: var(--btn-text);
-  }
-  .sound-toggle-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--text);
-  }
-  .btn-sound-test {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 6px 14px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    align-self: flex-end;
-  }
-  .btn-sound-test:hover { border-color: var(--accent2); color: var(--accent2); }
-  .sound-file-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .sound-filename {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-
-  /* ── Speed panel ── */
-  .btn-speed {
-    background: var(--surface);
-    border: 1px solid var(--border); border-radius: 8px;
-    color: var(--muted);
-    font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 600;
-    padding: 7px 16px; cursor: pointer;
-    transition: border-color 0.15s, color 0.15s; letter-spacing: 0.03em;
-  }
-  .btn-speed:hover { border-color: #ff9a3c; color: #ff9a3c; }
-
-  .speed-panel {
-    display: none;
-    background: rgba(var(--menu-tint), var(--menu-alpha));
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 32px;
-    backdrop-filter: blur(8px);
-    flex-direction: column;
-    gap: 20px;
-  }
-  .speed-panel.open { display: flex; }
-
-  .speed-warning {
-    display: flex; align-items: flex-start; gap: 12px;
-    background: rgba(255,100,0,0.08);
-    border: 1px solid rgba(255,100,0,0.35);
-    border-radius: 8px;
-    padding: 12px 16px;
-  }
-  .speed-warning-icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1.4; }
-  .speed-warning-text {
-    font-family: 'DM Mono', monospace; font-size: 0.78rem;
-    color: #ffb07a; line-height: 1.6;
-  }
-  .speed-warning-text strong { color: #ff7a3c; }
-
-  .speed-sliders { display: flex; gap: 32px; flex-wrap: wrap; }
-  .speed-slider-group { display: flex; flex-direction: column; gap: 10px; min-width: 220px; }
-  .speed-slider-label {
-    font-family: 'DM Mono', monospace; font-size: 0.72rem;
-    color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .speed-slider-row { display: flex; align-items: center; gap: 12px; }
-  .speed-slider-row input[type="range"] {
-    flex: 1; accent-color: #ff9a3c; cursor: pointer;
-  }
-  .speed-val {
-    font-family: 'DM Mono', monospace; font-size: 0.85rem;
-    font-weight: 700; color: var(--text); min-width: 28px; text-align: right;
-  }
-  .speed-desc {
-    font-family: 'DM Mono', monospace; font-size: 0.7rem;
-    color: var(--muted); line-height: 1.5;
-  }
-  .speed-risk {
-    font-family: 'DM Mono', monospace; font-size: 0.7rem;
-    margin-top: 4px; font-weight: 600;
-  }
-  .speed-risk.safe   { color: var(--success); }
-  .speed-risk.medium { color: #ffcc44; }
-  .speed-risk.high   { color: #ff7a3c; }
-  .speed-risk.danger { color: var(--danger); }
-
   /* ── Library panel ── */
   .library-overlay {
     display: none;
@@ -1025,7 +816,6 @@ HTML = r"""<!DOCTYPE html>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn-library" onclick="openLibrary()">📚 Library</button>
-      <button class="btn-speed" onclick="toggleSpeed()">⚡ Speed</button>
       <button class="btn-customize" onclick="toggleCustomize()">⚙ Customize</button>
     </div>
   </header>
@@ -1080,66 +870,6 @@ HTML = r"""<!DOCTYPE html>
       <span class="range-hint">0% = fully transparent · 100% = solid</span>
     </div>
 
-    <!-- Sound notification -->
-    <div class="sound-section">
-      <span class="sound-section-title">🔔 Completion sound</span>
-
-      <div class="sound-toggle-row">
-        <label class="sound-toggle">
-          <input type="checkbox" id="soundEnabled" onchange="saveSoundPrefs()">
-          <span class="sound-toggle-slider"></span>
-        </label>
-        <span class="sound-toggle-label">Play sound when download finishes</span>
-      </div>
-
-      <div class="sound-controls">
-
-        <!-- Custom sound file -->
-        <div class="sound-field">
-          <label>Sound file</label>
-          <div class="sound-file-row">
-            <label class="btn-bg-upload" for="soundFileInput" style="font-size:0.75rem;padding:6px 12px">
-              📂 Choose file
-            </label>
-            <input type="file" id="soundFileInput" accept="audio/*"
-                   style="display:none" onchange="loadSoundFile(this)">
-            <span class="sound-filename" id="soundFilename">Default beep</span>
-          </div>
-          <span class="range-hint">mp3, wav, ogg, flac, m4a …</span>
-        </div>
-
-        <!-- Start time -->
-        <div class="sound-field">
-          <label>Start time (mm:ss)</label>
-          <input type="text" id="soundStart" placeholder="0:00"
-                 value="0:00" oninput="saveSoundPrefs()">
-          <span class="range-hint">e.g. 1:44</span>
-        </div>
-
-        <!-- Duration -->
-        <div class="sound-field">
-          <label>Duration (seconds)</label>
-          <input type="number" id="soundDuration" min="1" max="60"
-                 value="3" oninput="saveSoundPrefs()">
-          <span class="range-hint">1 – 60 s</span>
-        </div>
-
-        <!-- Volume -->
-        <div class="sound-field" style="min-width:160px">
-          <label>Volume</label>
-          <div class="slider-row">
-            <input type="range" id="soundVolume" min="0" max="1" step="0.05"
-                   value="0.7" oninput="updateVolumeLabel(this.value); saveSoundPrefs()">
-            <span class="slider-val" id="soundVolumeVal">70%</span>
-          </div>
-        </div>
-
-        <!-- Test button -->
-        <button class="btn-sound-test" onclick="testSound()">▶ Test sound</button>
-
-      </div>
-    </div>
-
     <!-- Reset all -->
     <div class="customize-section" style="justify-content:flex-end;align-self:flex-end">
       <button class="btn-bg-clear" style="border-color:#555;color:var(--muted)"
@@ -1164,54 +894,6 @@ HTML = r"""<!DOCTYPE html>
       <span class="range-hint">0% = no overlay · 90% = very dark</span>
     </div>
 
-  </div>
-
-  <!-- ── Speed panel ── -->
-  <div class="speed-panel" id="speedPanel">
-
-    <div class="speed-warning">
-      <span class="speed-warning-icon">⚠</span>
-      <div class="speed-warning-text">
-        <strong>Higher speed = higher ban risk.</strong><br>
-        Increasing these values makes the program download faster but sends more
-        requests to the server. The site may temporarily block your IP if the
-        values are set too high. Default values are safe for normal use.
-      </div>
-    </div>
-
-    <div class="speed-sliders">
-
-      <!-- Concurrent images -->
-      <div class="speed-slider-group">
-        <span class="speed-slider-label">Concurrent images</span>
-        <div class="speed-slider-row">
-          <input type="range" id="imgSlider" min="1" max="16" step="1" value="4"
-                 oninput="updateImgSlider(this.value)">
-          <span class="speed-val" id="imgVal">4</span>
-        </div>
-        <div class="speed-desc">
-          How many images download at the same time per chapter.<br>
-          Images come from a CDN so this is relatively safe to increase.
-        </div>
-        <div class="speed-risk safe" id="imgRisk">● Safe</div>
-      </div>
-
-      <!-- Concurrent chapters -->
-      <div class="speed-slider-group">
-        <span class="speed-slider-label">Concurrent chapters</span>
-        <div class="speed-slider-row">
-          <input type="range" id="chapSlider" min="1" max="5" step="1" value="1"
-                 oninput="updateChapSlider(this.value)">
-          <span class="speed-val" id="chapVal">1</span>
-        </div>
-        <div class="speed-desc">
-          How many chapters are scraped and downloaded at the same time.<br>
-          Each chapter opens a full browser — higher values stress the site more.
-        </div>
-        <div class="speed-risk safe" id="chapRisk">● Safe</div>
-      </div>
-
-    </div>
   </div>
 
   <!-- Search -->
@@ -1327,101 +1009,6 @@ let _chapters = [];
 let _mangaTitle = '';
 let _activeDownloads = 0;
 
-// ── Speed settings ───────────────────────────────────────────────────────────
-
-let _concurrentImages   = 4;
-let _concurrentChapters = 1;
-
-function toggleSpeed() {
-  document.getElementById('speedPanel').classList.toggle('open');
-  // Close other panels when opening speed
-  document.getElementById('customizePanel').classList.remove('open');
-}
-
-function imgRiskLabel(v) {
-  v = parseInt(v);
-  if (v <= 4)  return ['safe',   '● Safe — recommended default'];
-  if (v <= 8)  return ['medium', '● Moderate — slightly higher load on CDN'];
-  if (v <= 12) return ['high',   '● High — CDN may throttle requests'];
-  return             ['danger', '● Very high — risk of temporary blocks'];
-}
-
-function chapRiskLabel(v) {
-  v = parseInt(v);
-  if (v === 1) return ['safe',   '● Safe — sequential, default behaviour'];
-  if (v === 2) return ['medium', '● Moderate — two browsers open at once'];
-  if (v === 3) return ['high',   '● High — site may detect unusual activity'];
-  return             ['danger', '● Very high — strong ban risk'];
-}
-
-function updateImgSlider(v) {
-  _concurrentImages = parseInt(v);
-  document.getElementById('imgVal').textContent = v;
-  const [cls, label] = imgRiskLabel(v);
-  const el = document.getElementById('imgRisk');
-  el.className = 'speed-risk ' + cls;
-  el.textContent = label;
-  saveSpeed();
-}
-
-function updateChapSlider(v) {
-  _concurrentChapters = parseInt(v);
-  document.getElementById('chapVal').textContent = v;
-  const [cls, label] = chapRiskLabel(v);
-  const el = document.getElementById('chapRisk');
-  el.className = 'speed-risk ' + cls;
-  el.textContent = label;
-  saveSpeed();
-}
-
-async function saveSpeed() {
-  try {
-    await fetch('/api/speed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        concurrent_images:   _concurrentImages,
-        concurrent_chapters: _concurrentChapters
-      })
-    });
-  } catch(e) { /* non-critical */ }
-  // Also save to localStorage so UI state persists across page reloads
-  localStorage.setItem('speedImages',   _concurrentImages);
-  localStorage.setItem('speedChapters', _concurrentChapters);
-}
-
-// Load saved speed prefs on startup
-(function loadSpeedPrefs() {
-  const si = parseInt(localStorage.getItem('speedImages')   || '4');
-  const sc = parseInt(localStorage.getItem('speedChapters') || '1');
-
-  _concurrentImages   = si;
-  _concurrentChapters = sc;
-
-  document.getElementById('imgSlider').value  = si;
-  document.getElementById('chapSlider').value = sc;
-  document.getElementById('imgVal').textContent  = si;
-  document.getElementById('chapVal').textContent = sc;
-
-  const [ic, il] = imgRiskLabel(si);
-  const imgRisk = document.getElementById('imgRisk');
-  imgRisk.className = 'speed-risk ' + ic;
-  imgRisk.textContent = il;
-
-  const [cc, cl] = chapRiskLabel(sc);
-  const chapRisk = document.getElementById('chapRisk');
-  chapRisk.className = 'speed-risk ' + cc;
-  chapRisk.textContent = cl;
-
-  // Sync to server on load
-  fetch('/api/speed', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ concurrent_images: si, concurrent_chapters: sc })
-  }).catch(() => {});
-})();
-
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function hexToRgb(hex) {
@@ -1437,8 +1024,6 @@ const root = document.documentElement;
 
 function toggleCustomize() {
   document.getElementById('customizePanel').classList.toggle('open');
-  // Close speed panel if open
-  document.getElementById('speedPanel').classList.remove('open');
 }
 
 function applyTitleColor(v) {
@@ -1770,28 +1355,14 @@ async function downloadRange() {
 async function runBulkDownload(indices) {
   document.getElementById('downloadAllBtn').disabled   = true;
   document.getElementById('downloadRangeBtn').disabled = true;
-
-  // Filter out already-done chapters
-  const pending = indices.filter(i => {
-    const b = document.getElementById('btn-' + i);
-    return !(b && b.classList.contains('done-btn'));
-  });
-
-  // Process in batches of _concurrentChapters
-  for (let b = 0; b < pending.length; b += _concurrentChapters) {
-    const batch = pending.slice(b, b + _concurrentChapters);
-    // Start all chapters in this batch simultaneously
-    await Promise.all(batch.map(async (i) => {
-      await downloadChapter(i);
-      await waitForDownloadDone(i);
-    }));
+  for (const i of indices) {
+    const rowBtn = document.getElementById('btn-' + i);
+    if (rowBtn && rowBtn.classList.contains('done-btn')) continue;
+    await downloadChapter(i);
+    await waitForDownloadDone(i);
   }
-
   document.getElementById('downloadAllBtn').disabled   = false;
   document.getElementById('downloadRangeBtn').disabled = false;
-
-  // Play the completion sound (if enabled)
-  playCompletionSound();
 }
 
 function waitForDownloadDone(i) {
@@ -1896,157 +1467,6 @@ function resetLibCustomization() {
 })();
 
 
-// ── Sound notification ───────────────────────────────────────────────────────
-
-// Holds the decoded AudioBuffer for the custom sound file
-let _soundBuffer    = null;   // AudioBuffer if user loaded a file
-let _soundDataUrl   = null;   // raw data URL for localStorage persistence
-let _audioCtx       = null;   // shared AudioContext (created on first use)
-
-function getAudioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return _audioCtx;
-}
-
-/** Parse "m:ss" or "ss" into a float number of seconds */
-function parseTimeInput(str) {
-  str = (str || '0:00').trim();
-  const parts = str.split(':');
-  if (parts.length === 2) {
-    return Math.max(0, parseInt(parts[0]) * 60 + parseFloat(parts[1]));
-  }
-  return Math.max(0, parseFloat(str) || 0);
-}
-
-/** Generate a simple two-tone beep as fallback when no file is loaded */
-function playBeep(startOffset, duration, volume) {
-  const ctx = getAudioCtx();
-  const gain = ctx.createGain();
-  gain.gain.value = volume;
-  gain.connect(ctx.destination);
-
-  [[880, 0], [1100, 0.15]].forEach(([freq, delay]) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    osc.connect(gain);
-    const t = ctx.currentTime + delay;
-    osc.start(t);
-    osc.stop(t + duration * 0.5);
-  });
-}
-
-/** Play the sound with the current settings */
-async function playCompletionSound() {
-  if (!document.getElementById('soundEnabled').checked) return;
-
-  const startSec = parseTimeInput(document.getElementById('soundStart').value);
-  const duration = Math.min(60, Math.max(0.5, parseFloat(document.getElementById('soundDuration').value) || 3));
-  const volume   = parseFloat(document.getElementById('soundVolume').value) || 0.7;
-
-  if (!_soundBuffer) {
-    // No file loaded – play the built-in beep
-    playBeep(0, duration, volume);
-    return;
-  }
-
-  try {
-    const ctx   = getAudioCtx();
-    const src   = ctx.createBufferSource();
-    src.buffer  = _soundBuffer;
-
-    const gain  = ctx.createGain();
-    gain.gain.value = volume;
-
-    src.connect(gain);
-    gain.connect(ctx.destination);
-
-    // Clamp startSec to within the audio duration
-    const safeStart = Math.min(startSec, _soundBuffer.duration - 0.1);
-    src.start(ctx.currentTime, Math.max(0, safeStart), duration);
-  } catch (e) {
-    console.warn('Sound playback failed:', e);
-  }
-}
-
-/** Load a user-chosen audio file into an AudioBuffer */
-async function loadSoundFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  document.getElementById('soundFilename').textContent = file.name;
-
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    _soundDataUrl = e.target.result;
-    try {
-      const ctx = getAudioCtx();
-      const arrayBuffer = await fetch(_soundDataUrl).then(r => r.arrayBuffer());
-      _soundBuffer = await ctx.decodeAudioData(arrayBuffer);
-      // Persist to localStorage (may fail for very large files)
-      try { localStorage.setItem('soundFile', _soundDataUrl); } catch(err) {}
-      localStorage.setItem('soundFilename', file.name);
-      saveSoundPrefs();
-    } catch (err) {
-      console.warn('Could not decode audio file:', err);
-      document.getElementById('soundFilename').textContent = file.name + ' (decode failed)';
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-/** Save non-file sound prefs to localStorage */
-function saveSoundPrefs() {
-  localStorage.setItem('soundEnabled',  document.getElementById('soundEnabled').checked);
-  localStorage.setItem('soundStart',    document.getElementById('soundStart').value);
-  localStorage.setItem('soundDuration', document.getElementById('soundDuration').value);
-  localStorage.setItem('soundVolume',   document.getElementById('soundVolume').value);
-}
-
-function updateVolumeLabel(v) {
-  document.getElementById('soundVolumeVal').textContent = Math.round(v * 100) + '%';
-}
-
-/** Let the user hear the sound without running a full download */
-function testSound() {
-  // Resume AudioContext if suspended (browser autoplay policy)
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume().then(() => playCompletionSound());
-  else playCompletionSound();
-}
-
-/** Load all saved sound prefs on startup */
-(function loadSoundPrefs() {
-  const enabled  = localStorage.getItem('soundEnabled') === 'true';
-  const start    = localStorage.getItem('soundStart')    || '0:00';
-  const dur      = localStorage.getItem('soundDuration') || '3';
-  const vol      = localStorage.getItem('soundVolume')   || '0.7';
-  const filename = localStorage.getItem('soundFilename') || 'Default beep';
-
-  document.getElementById('soundEnabled').checked  = enabled;
-  document.getElementById('soundStart').value      = start;
-  document.getElementById('soundDuration').value   = dur;
-  document.getElementById('soundVolume').value      = vol;
-  document.getElementById('soundFilename').textContent = filename;
-  updateVolumeLabel(vol);
-
-  // Try to reload the saved audio file
-  const savedFile = localStorage.getItem('soundFile');
-  if (savedFile) {
-    _soundDataUrl = savedFile;
-    (async () => {
-      try {
-        const ctx = getAudioCtx();
-        const arrayBuffer = await fetch(savedFile).then(r => r.arrayBuffer());
-        _soundBuffer = await ctx.decodeAudioData(arrayBuffer);
-      } catch (e) {
-        console.warn('Could not restore saved sound file:', e);
-      }
-    })();
-  }
-})();
-
-
 // ── Library ───────────────────────────────────────────────────────────────────
 
 async function openLibrary() {
@@ -2142,20 +1562,11 @@ def index():
 
 
 if __name__ == "__main__":
-    import webbrowser, threading
-
-    def open_browser():
-        # Wait a moment for Flask to start, then open the browser
-        time.sleep(1.5)
-        webbrowser.open("http://localhost:7337")
-
     print()
     print("  ┌─────────────────────────────────────────┐")
     print("  │   Manga Downloader GUI                  │")
-    print("  │   Opening browser...                    │")
+    print("  │   Open: http://localhost:7337            │")
     print("  │   Press Ctrl+C to stop                  │")
     print("  └─────────────────────────────────────────┘")
     print()
-
-    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="127.0.0.1", port=7337, debug=False, threaded=True)

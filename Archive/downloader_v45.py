@@ -38,7 +38,6 @@ import sys
 import time
 import random
 import logging
-import threading
 import requests
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -549,32 +548,8 @@ def collect_image_urls(chapter_url: str) -> list[str]:
 
         browser.close()
 
-    # ── Fix 1: strip query strings before deduplicating ──────────────────────
-    # atsu.moe sometimes appends cache-busting tokens (?v=2, ?t=123) to the
-    # same image URL, making identical images look like different URLs.
-    # We normalise by stripping the query string before deduplication, then
-    # keep the clean version of the URL for downloading.
-    def strip_qs(url: str) -> str:
-        p = urlparse(url)
-        return p._replace(query="", fragment="").geturl()
-
-    # Deduplicate by normalised URL, keeping first occurrence (intercepted wins
-    # over DOM since network interception is more reliable)
-    seen_normalised: set[str] = set()
-    deduped_urls: list[str] = []
-    for url in intercepted + dom_urls:
-        norm = strip_qs(url)
-        if norm not in seen_normalised:
-            seen_normalised.add(norm)
-            deduped_urls.append(norm)  # store the clean version
-
-    # ── Fix 2: filter out non-manga images ──────────────────────────────────
-    # The chapter ID in the reader URL (e.g. PBvnfXlp) is different from the
-    # internal storage ID used in image paths (e.g. cmgzkpger2efxm191llgsoebt),
-    # so we cannot match by chapter ID. Instead we just apply the standard
-    # manga image filter which already excludes UI elements, avatars, etc.
-    manga_urls = [u for u in deduped_urls if _looks_like_manga_image(u)]
-
+    all_urls = list(dict.fromkeys(intercepted + dom_urls))
+    manga_urls = [u for u in all_urls if _looks_like_manga_image(u)]
     log.info(f"  Found {len(manga_urls)} images "
              f"({len(intercepted)} intercepted, {len(dom_urls)} from DOM)")
     return manga_urls
@@ -629,21 +604,6 @@ HEADERS = {
 # 4 workers is a good balance between speed and being polite to the server.
 CONCURRENT_DOWNLOADS = 4
 
-# Minimum file size to consider a download valid.
-# Files smaller than this are treated as corrupt/incomplete and re-downloaded.
-MIN_VALID_SIZE_BYTES = 2048  # 2 KB
-
-# Per-filepath locks prevent two parallel workers writing the same file.
-_file_locks: dict[str, threading.Lock] = {}
-_file_locks_mutex = threading.Lock()
-
-def _get_file_lock(filepath: str) -> threading.Lock:
-    """Return a per-file lock, creating it if it doesn't exist."""
-    with _file_locks_mutex:
-        if filepath not in _file_locks:
-            _file_locks[filepath] = threading.Lock()
-        return _file_locks[filepath]
-
 
 def _download_one(idx: int, total: int, url: str,
                   out_dir: Path, referer: str, pad: int) -> bool:
@@ -673,35 +633,13 @@ def _download_one(idx: int, total: int, url: str,
             filename = f"{idx:0{pad}d}.{ext}"
             filepath = out_dir / filename
 
-            # ── Fix 3: per-file lock prevents two workers writing the same file ──
-            file_lock = _get_file_lock(str(filepath))
-            with file_lock:
-                # ── Fix 4: skip only if file exists AND exceeds minimum valid size ──
-                # A file that is > 0 bytes but < 2 KB is likely truncated from a
-                # previous interrupted download and should be re-downloaded.
-                if filepath.exists() and filepath.stat().st_size >= MIN_VALID_SIZE_BYTES:
-                    log.info(f"    [{idx}/{total}] skip: {filename}")
-                    return True
+            if filepath.exists() and filepath.stat().st_size > 0:
+                log.info(f"    [{idx}/{total}] skip: {filename}")
+                return True
 
-                # Remove any truncated leftover before writing
-                if filepath.exists():
-                    log.info(f"    [{idx}/{total}] replacing incomplete file: {filename}")
-                    filepath.unlink()
-
-                tmp = filepath.with_suffix(".tmp")
-                try:
-                    with open(tmp, "wb") as f:
-                        for chunk in resp.iter_content(chunk_size=65_536):
-                            f.write(chunk)
-                    # Validate size before committing
-                    if tmp.stat().st_size < MIN_VALID_SIZE_BYTES:
-                        tmp.unlink(missing_ok=True)
-                        log.warning(f"    [{idx}/{total}] download too small, skipping: {filename}")
-                        return False
-                    tmp.rename(filepath)
-                except Exception:
-                    tmp.unlink(missing_ok=True)
-                    raise
+            with open(filepath, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=65_536):
+                    f.write(chunk)
 
             size_kb = filepath.stat().st_size // 1024
             log.info(f"    [{idx}/{total}] {filename}  ({size_kb} KB)")

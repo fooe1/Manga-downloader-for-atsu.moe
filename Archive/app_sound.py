@@ -742,7 +742,7 @@ HTML = r"""<!DOCTYPE html>
   }
   .sound-field input[type="text"],
   .sound-field input[type="number"] {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--text);
@@ -768,11 +768,10 @@ HTML = r"""<!DOCTYPE html>
   .sound-toggle input { opacity: 0; width: 0; height: 0; }
   .sound-toggle-slider {
     position: absolute; inset: 0;
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 1.5));
-    border: 1px solid var(--border);
+    background: var(--border);
     border-radius: 20px;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s;
   }
   .sound-toggle-slider::before {
     content: '';
@@ -783,10 +782,10 @@ HTML = r"""<!DOCTYPE html>
     border-radius: 50%;
     transition: transform 0.2s, background 0.2s;
   }
-  .sound-toggle input:checked + .sound-toggle-slider { background: var(--fetch-bg); border-color: var(--fetch-bg); }
+  .sound-toggle input:checked + .sound-toggle-slider { background: var(--accent); }
   .sound-toggle input:checked + .sound-toggle-slider::before {
     transform: translateX(16px);
-    background: var(--btn-text);
+    background: #0d0d0f;
   }
   .sound-toggle-label {
     font-family: 'DM Mono', monospace;
@@ -794,10 +793,10 @@ HTML = r"""<!DOCTYPE html>
     color: var(--text);
   }
   .btn-sound-test {
-    background: rgba(var(--menu-tint), calc(var(--menu-alpha) * 0.6));
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: 7px;
-    color: var(--text);
+    color: var(--muted);
     font-family: 'Syne', sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
@@ -2142,20 +2141,11 @@ def index():
 
 
 if __name__ == "__main__":
-    import webbrowser, threading
-
-    def open_browser():
-        # Wait a moment for Flask to start, then open the browser
-        time.sleep(1.5)
-        webbrowser.open("http://localhost:7337")
-
     print()
     print("  ┌─────────────────────────────────────────┐")
     print("  │   Manga Downloader GUI                  │")
-    print("  │   Opening browser...                    │")
+    print("  │   Open: http://localhost:7337            │")
     print("  │   Press Ctrl+C to stop                  │")
     print("  └─────────────────────────────────────────┘")
     print()
-
-    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="127.0.0.1", port=7337, debug=False, threaded=True)

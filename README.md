@@ -4,38 +4,45 @@ A manga downloader for [atsu.moe](https://atsu.moe) built as a school assignment
 
 ---
 
-## Features
+## Installation
 
-- **Web GUI** — paste a URL, see the cover and chapter list, download with one click
-- **Full chapter detection** — handles virtualised chapter lists and the `?filter=all` endpoint
-- **Parallel downloads** — 4 images at a time for faster chapter downloads
-- **Chapter selection** — download all or pick specific chapters via ranges (`1-10`, `5-`, `1,3,5`)
-- **JS rendering** — uses a real headless Chromium browser to handle lazy-loaded images
-- **Smart filtering** — ignores comment attachments, profile pictures, GIFs, and UI elements
-- **Duplicate handling** — skips multiple scanlation groups for the same chapter number
-- **Resume support** — skips already-downloaded chapters automatically
+### Requirements
+- **Python 3.11 or newer**
+  - Linux: `sudo apt install python3` / `sudo pacman -S python`
+  - Windows: download from [python.org/downloads](https://www.python.org/downloads/) — tick **"Add Python to PATH"** during install
 
 ---
 
-## Setup
+### Linux / macOS
 
-**Requirements:** Python 3.11+, Arch Linux (or any Linux distro)
+1. Download or clone this repository
+2. Open a terminal in the folder
+3. Run the installer:
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+4. When it finishes, start the app by double-clicking **"Start Manga Downloader.sh"**
 
-```bash
-# 1. Clone the repo
-git clone https://github.com/yourusername/manga-downloader
-cd manga-downloader
+---
 
-# 2. Create a virtual environment
-python -m venv .venv
-source .venv/bin/activate
+### Windows
 
-# 3. Install dependencies
-pip install -r requirements.txt
+1. Download or clone this repository
+2. Double-click **`install.bat`**
+   *(If Windows blocks it, right-click → "Run anyway")*
+3. When it finishes, double-click **"Start Manga Downloader.bat"**
+   The browser opens automatically
 
-# 4. Install the Chromium browser Playwright needs (one-time)
-playwright install chromium
-```
+---
+
+### What the installer does
+
+1. Checks Python 3.11+ is installed and gives a clear message if not
+2. Creates a `.venv` virtual environment
+3. Installs all Python packages (`playwright`, `flask`, `requests`)
+4. Downloads the Chromium browser Playwright needs (~200 MB, one-time)
+5. Creates a launcher so you can start the app without a terminal next time
 
 ---
 
@@ -43,50 +50,35 @@ playwright install chromium
 
 ### Web GUI (recommended)
 
-```bash
-python app.py
-```
-
-Then open **http://localhost:7337** in your browser.
+Start the app with the launcher, then open **http://localhost:7337**.
 
 1. Paste a series URL (`https://atsu.moe/manga/...`)
-2. Hit **Fetch** — the cover, title, and chapter list load automatically
-3. Click **↓ Download** next to any chapter, or **↓ Download All** for everything
+2. Hit **Fetch** — cover, title, and chapter list load automatically
+3. Click **↓ Download** next to any chapter, or **↓ Download All**
 
 ### Command line
 
 ```bash
-# Download all chapters
-python downloader.py "https://atsu.moe/manga/GTyxf"
+# Activate virtual environment first
+source .venv/bin/activate        # Linux/macOS
+.venv\Scripts\activate.bat       # Windows
 
-# Choose which chapters interactively
-python downloader.py "https://atsu.moe/manga/GTyxf" --select
-
-# Download a single chapter
-python downloader.py "https://atsu.moe/read/GTyxf/PBvnfXlp"
+python downloader.py "https://atsu.moe/manga/GTyxf"          # all chapters
+python downloader.py "https://atsu.moe/manga/GTyxf" --select  # choose chapters
+python downloader.py "https://atsu.moe/read/GTyxf/PBvnfXlp"  # single chapter
 ```
 
-**Chapter selection syntax** (shown when using `--select`):
-
-| Input | Result |
-|---|---|
-| `all` | Every chapter |
-| `1-10` | Chapters 1 through 10 |
-| `5-` | Chapter 5 to the end |
-| `1,3,5` | Chapters 1, 3, and 5 |
-| `1-5,10,15-20` | Mix of ranges and singles |
+**Chapter selection formats:** `all` · `1-10` · `5-` · `1,3,5` · `1-5,10,15-20`
 
 ---
 
-## Output structure
+## Output
 
 ```
 downloads/
   Manga Title/
     001 - Chapter 1/
       001.webp
-      002.webp
-      ...
     002 - Chapter 2/
       ...
 ```
@@ -97,25 +89,27 @@ downloads/
 
 | File | Purpose |
 |---|---|
+| `install.sh` | Installer for Linux / macOS |
+| `install.bat` | Installer for Windows |
 | `app.py` | Flask web server and GUI |
 | `downloader.py` | All scraping and download logic |
 | `requirements.txt` | Python dependencies |
+| `library.json` | Saved manga series (auto-created) |
 
 ---
 
-## How it works
+## Troubleshooting
 
-1. The series page is opened in a headless Chromium browser with `?filter=all` appended — this is what the "All chapters" button on the site does
-2. Chapter links are collected by slowly scrolling the page while scraping the DOM
-3. For each chapter, Playwright opens the reader page and intercepts image requests as the page scrolls
-4. Images are filtered to exclude UI elements, comment attachments, profile pictures, and GIFs from external hosts
-5. Filtered images are downloaded in parallel using a thread pool with random jitter to avoid rate limiting
+**Windows: "Python was not found"** — Reinstall Python and tick **"Add Python to PATH"**.
+
+**Windows: install.bat blocked** — Right-click → Properties → tick "Unblock" → OK.
+
+**Linux: permission denied** — Run `chmod +x install.sh` first.
 
 ---
 
 ## Notes
 
-- This project was built for educational purposes as a school assignment in vibe coding
-- Only works with atsu.moe — other sites have different structures
-- Be respectful of the site: don't run multiple instances at once
-- Downloaded files are saved locally and never uploaded anywhere
+- Built for educational purposes as a school assignment in vibe coding
+- Only works with atsu.moe
+- Downloaded files are saved locally in `downloads/`

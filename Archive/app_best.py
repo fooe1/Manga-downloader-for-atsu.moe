@@ -2142,20 +2142,11 @@ def index():
 
 
 if __name__ == "__main__":
-    import webbrowser, threading
-
-    def open_browser():
-        # Wait a moment for Flask to start, then open the browser
-        time.sleep(1.5)
-        webbrowser.open("http://localhost:7337")
-
     print()
     print("  ┌─────────────────────────────────────────┐")
     print("  │   Manga Downloader GUI                  │")
-    print("  │   Opening browser...                    │")
+    print("  │   Open: http://localhost:7337            │")
     print("  │   Press Ctrl+C to stop                  │")
     print("  └─────────────────────────────────────────┘")
     print()
-
-    threading.Thread(target=open_browser, daemon=True).start()
     app.run(host="127.0.0.1", port=7337, debug=False, threaded=True)
